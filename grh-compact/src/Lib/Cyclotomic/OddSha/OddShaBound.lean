@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import Lib.Cyclotomic.Kolyvagin.ComponentBound
 
 /-! Known result: Bound for the odd part of a twisted Tate–Shafarevich group of an abelian CM field.
@@ -31,18 +32,13 @@ lemma exists_detecting_points_cocycles {N E} [NeZero N] [Field E] [EmbeddedNumbe
   refine ⟨.image (Sum.elim (invFun f) (r ∘ b)) .univ, fun y a c ↦ Finset.card_image_le.trans ?_,
     @fun O _ _ n _ z s t ↦
     (fun k (h : l ^ k • z = 0) ↦ ?_) n (funext₂ (by simp [↓nsmul_quot_eq_zero]))⟩
-  · have d {p : Ideal ℤ} [p.IsMaximal] (h : p ≠ ⊥) : (IsDedekindDomain.primesOverFinset p
-        (NumberField.RingOfIntegers (cycloField M))).card ≤ Module.finrank ℚ (cycloField M) := by
-      rw [← NumberField.RingOfIntegers.rank, ← sum_ramification_inertia_eq_finrank p,
-        ← Set.ncard_coe_finset, IsDedekindDomain.coe_primesOverFinset h, ← Nat.card_coe_set_eq,
-        Nat.card_eq_fintype_card, Fintype.card_eq_sum_ones]
-      exact Finset.sum_le_sum fun q _ ↦ mul_pos (ramificationIdx_pos ..) (inertiaDeg_pos ..)
-    apply Nat.le_of_dvd at hh
+  · apply Nat.le_of_dvd at hh
     grw [classNumber_le, j, natAbs_discr M, Nat.div_le_self, M.lt_two_pow_self.le, ← hm,
       Set.ncard_congr' (.trans (.subtypeEquivRight (by simp [placesDividing]))
       (equivPrimesOver _ (p := span {(l : ℤ)}) _)), ← IsDedekindDomain.coe_primesOverFinset] at hh
     simp [← pow_mul, ← pow_add, pow_le_pow_iff_right₀] at *
-    grw [d, finrank M, Nat.totient_le, hM, a, c] at *
+    grw [Ideal.card_primesOverFinset_le_finrank (R := ℤ) (NumberField.RingOfIntegers (cycloField M))
+      ℚ (cycloField M), finrank M, Nat.totient_le, hM, a, c] at *
     nlinarith [Nat.zero_le (y ^ 15)]
     all_goals first | omega | simp [ne, NumberField.classNumber, Ne.pos, i]
   induction' k with _ ih generalizing z <;> ext1 g; simp [↓← h]

@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import Statements
 import New.Data.DataExist
 import New.Endgame.LongForms
@@ -129,19 +130,18 @@ lemma star_inequality {P} {D : Data P} : D.m * D.remainder ≤ D.logB ^ 2 * D.bu
     grw [def_h, ← abs_mainHeight_add_remainder_le, ← neg_le_abs, ← le_abs_self,
       ← (HasLogBound.pos D : 0 < L)]
     simp
-  have both : d * (D.mainHeight - 3 * L) ≤ d * (D.mainHeight - D.m * D.remainder + L + 4 *
-    D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget) := calc
-    _ ≤ d * h + (d - n) * -h + 2 * δ := (integral_forms_long i big I short).trans_eq (by ring)
-                    -- the missing dimensions are a share `4 / b²`, and the index is small
-    _ ≤ d * h + 4 / D.b ^ 2 * d * (D.b ^ 2 * D.x ^ 99) + 2 *
-      (5 * d * log (1 + D.b ^ 2) * D.budget) := by
-      grw [crude, index, show d - n ≤ 4 / D.b ^ 2 * d by linarith]
-      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤
-        D.rowDim)
-    _ = _ := by rw [def_h]; field [exp_ne_zero]
-  -- divide by `d`; `h_main` cancels
+  -- The missing rows account for at most a share 4/b² of the dimension.
+  have loss : (d - n) * -h ≤ d * (4 * D.x ^ 99) := calc
+    _ ≤ 4 / D.b ^ 2 * d * (D.b ^ 2 * D.x ^ 99) := by
+      grw [crude, show d - n ≤ 4 / D.b ^ 2 * d by linarith]
+      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤ D.rowDim)
+    _ = _ := by field [exp_ne_zero]
+  -- Combine the loss, the index bound and the lower bound for integral forms.
   calc D.m * D.remainder ≤ 4 * L + 4 * D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget := by
-        linarith [le_of_mul_le_mul_left both d0]
+        refine le_of_mul_le_mul_left ?_ d0
+        have vol := integral_forms_long i big I short
+        dsimp only [h, d, L] at loss index vol ⊢
+        linarith only [loss, index, vol]
     _ ≤ _ := D.le_of_hasLogBound
 
 /-- One-sided bound: for parameters N₀, d as in `Parameters` and 0 < ε < 1/100, the remainder

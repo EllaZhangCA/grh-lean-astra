@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import Lib.General.LinearAlgebra.Base
 
 /-! Known result: Amitsur's formula for the characteristic polynomial of a sum (integrality
@@ -177,5 +178,5 @@ lemma hasDerivAt_det {γ : ℝ → Matrix n n ℂ} {Y s} (e : γ s = 1) (h : Has
     n _ _ ℂ _).1.restrictScalars ℝ, continuous_id.matrix_det⟩ _).comp_hasDerivAt s h).congr_deriv
     (by erw [_root_.sum_apply, ← _root_.funext fun _ ↦ cramer_transpose_apply ..]; aesop)
 
-lemma pderiv_comm {σ} a b (p : MvPolynomial σ B) : (p.pderiv b).pderiv a = (p.pderiv a).pderiv
-    b := by ext; simp [MvPolynomial.coeff_pderiv, Finsupp.single_apply]; grind
+lemma pderiv_comm {σ} a b (p : MvPolynomial σ B) :
+    (p.pderiv b).pderiv a = (p.pderiv a).pderiv b := MvPolynomial.pderiv_comm a b p

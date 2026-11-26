@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import Lib.ClassField.GaloisCohomology.CyclicClass
 import Lib.PadicHodge.Crystalline.NonUnitalUnits
 import Lib.Adelic.Adeles.AdeleIdempotent
@@ -135,18 +136,13 @@ attribute [local simp] Nat.minFac_pos slitPlane_ne_zero dedekindZeta_residue_ne_
 factor of q_v, is at most [K : ℚ]. -/
 lemma sum_inv_minFac_sq_le_finrank (u : Finset (FinPlace K)) : ∑ v ∈ u, (v.q.minFac ^ 2 : ℝ)⁻¹ ≤
   finrank ℚ K := by
-  have c {p : Ideal ℤ} [p.IsMaximal] (h : p ≠ ⊥) :
-      #(IsDedekindDomain.primesOverFinset p (𝓞 K)) ≤ finrank ℚ K := by
-    rw [← RingOfIntegers.rank, ← sum_ramification_inertia_eq_finrank p, ← Set.ncard_coe_finset,
-      IsDedekindDomain.coe_primesOverFinset h, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card,
-      Fintype.card_eq_sum_ones]
-    exact sum_le_sum fun q _ ↦ mul_pos (ramificationIdx_pos ..) (inertiaDeg_pos ..)
   grw [sum_comp fun n ↦ (_ ^ 2)⁻¹, sum_le_sum fun n h ↦ nsmul_le_nsmul_left _ ((mem_image.1 h).rec
     fun v e ↦ by grw [card_le_card_of_injOn _ (fun w _ ↦ (IsDedekindDomain.coe_primesOverFinset
     (v.under ℤ).3 _).ge ⟨w.2, ⟨Ideal.ext (by
     simp_all [Int.cast_mem_ideal_iff, ← fun v : FinPlace K ↦ (v.1.under
     ℤ).absNorm_pow_inertiaDeg v.1, (Nat.absNorm_under_prime _).pow_minFac (inertiaDeg_pos ..).ne'])
-    ⟩⟩) asIdeal_injective.injOn, c (ne_bot _)]), ← smul_sum,
+    ⟩⟩) asIdeal_injective.injOn,
+    Ideal.card_primesOverFinset_le_finrank (R := ℤ) (𝓞 K) ℚ K (ne_bot _)]), ← smul_sum,
     image_subset_iff.2 fun v h ↦ mem_Ioo.2 ⟨(Nat.minFac_prime v.one_lt_q.ne').one_lt,
     le_sup (f := (·.q.minFac + 1)) h⟩, sum_Ioo_inv_sq_le] <;> bound
 

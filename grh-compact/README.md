@@ -1,9 +1,9 @@
 # The Generalized Riemann Hypothesis for Dirichlet L-functions, in Lean 4
 
-Research artifact. Not maintained and not accepting contributions.
+Modified from the compact edition of lsernau/grh-lean with **GPT-6.2 Astra**. See the [repository README](../README.md) for the measured changes and verification of this edition.
 
 The proof is Levent Alpöge's, with Claude.
-The Lean text and the documents in this project were written by Claude (AI).
+Claude (AI) wrote the Lean text and documentation in the upstream edition.
 
 This project holds a Lean 4 proof of the Riemann Hypothesis. It also proves the Generalized Riemann Hypothesis for Dirichlet L-functions. The proof builds on Mathlib. It uses only the axioms `propext`, `Classical.choice` and `Quot.sound`.
 
@@ -24,7 +24,8 @@ All moduli N ≥ 1 and all characters are covered, primitive or not. The last th
 ## Build
 The build needs Lean v4.35.0, set in `lean-toolchain`. It needs Mathlib at commit 56a005855ea17e0b0958f73ec801ae140b0a1679, set in `lake-manifest.json`. Run `lake exe cache get`, then `lake build`. If the cache is missing, Lake builds Mathlib from source (about 85 minutes on 12 cores). A build takes one to two hours on 12 cores; allow 24 GB of memory. The build prints some linter and deprecation warnings. `lakefile.toml` raises the heartbeat limit and the stack size. To list the axioms, run `lake env lean scripts/PrintAxioms.lean`. The first of its five results is `'riemannHypothesis' depends on axioms: [propext, Classical.choice, Quot.sound]`.
 
-## Checks
+## Checks recorded by the upstream authors
+
 Every file in `src` compiles with the pinned Lean and Mathlib, without errors or `sorry`, and was replayed through the kernel of Lean. The first theorem has Mathlib's type `RiemannHypothesis`, the other four have the types fixed in `src/Statements.lean`, and all five depend only on the three axioms above. These checks show that Lean accepts the proof of the stated theorems.
 
 `Challenge.lean` states the five theorems with `sorry` in place of proofs, and `comparator.json` sets up the tool [Comparator](https://github.com/leanprover/comparator), which compares them with `src/Main.lean` and checks the proofs again. Nothing imports `Challenge.lean`, and `lake build` does not build it. We ran Comparator v4.35.0 on this folder (Linux, with a stand-in for its sandbox and `ulimit -s unlimited`), and it accepted the proofs; allow 64 GB of memory and a few hours.
