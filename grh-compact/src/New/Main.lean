@@ -78,9 +78,9 @@ Deduction (this file): `star_inequality`, then `eventually_primeError_le_rpow`, 
 What cancels, and where:
 * `𝖴` (`dirCost`), as `h_main`: upper bound against lower bound; `star_inequality`, last step
 * `chowlaSelbergConst` in the period `bigOmega`, Stirling: row of length `a` against `mainAsk`;
-  `heightPerRow_le`, `excess`
+  the scaled Stirling inequality in `heightPerRow_le`
 * `m (w̄ + G)`, the main term of `logLevelTarget`: level against the `m` excesses;
-  `heightPerRow_le`, third step
+  the lower bound for `log D.N` in `heightPerRow_le`
 * `log x`, `log x₁`, `-1 - chowlaSelbergConst`: prime sums against `mainAsk`; `remainder_eq`
 
 Here `w̄` is the mean of `log nominalWeight` over all `f` places, `G = log (g rootDisc / 2π)`, and
@@ -121,27 +121,20 @@ occurs is below `b`. -/
 The inequality (⋆): upper bound for weighted non-split primes. -/
 lemma star_inequality {P} {D : Data P} : D.m * D.remainder ≤ D.logB ^ 2 * D.budget :=
   D.exists_family_covolumeSq_le.elim fun n ⟨y, i, big, ⟨δ, index, I⟩, short⟩ ↦ by
-  have d0 : (0 : ℝ) < D.rowDim := mod_cast D.finrank_rows_ne_zero.pos
-  -- `d` is the dimension, `L = f a log⁴ b` the unit of error, `exp h` the bound per form
-  set d := (D.rowDim : ℝ)
-  set L := D.logB * D.budget
-  set h := D.mainHeight - D.m * D.remainder + L with def_h
-  have crude : -h ≤ D.b ^ 2 * D.x ^ 99 := by
-    grw [def_h, ← abs_mainHeight_add_remainder_le, ← neg_le_abs, ← le_abs_self,
-      ← (HasLogBound.pos D : 0 < L)]
-    simp
-  -- The missing rows account for at most a share 4/b² of the dimension.
-  have loss : (d - n) * -h ≤ d * (4 * D.x ^ 99) := calc
-    _ ≤ 4 / D.b ^ 2 * d * (D.b ^ 2 * D.x ^ 99) := by
-      grw [crude, show d - n ≤ 4 / D.b ^ 2 * d by linarith]
-      exact sub_nonneg.2 (mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank : (n : ℝ) ≤ D.rowDim)
-    _ = _ := by field [exp_ne_zero]
-  -- Combine the loss, the index bound and the lower bound for integral forms.
+  have d : (0 : ℝ) < D.rowDim := mod_cast D.finrank_rows_ne_zero.pos
+  have small : (n : ℝ) ≤ D.rowDim := mod_cast Fintype.card_fin n ▸ i.fintype_card_le_finrank
+  let L := D.logB * D.budget
+  -- Shift the height per row by a crude bound so that it can be multiplied by n ≤ rowDim.
+  have h : 0 ≤ D.b ^ 2 * D.x ^ 99 + (D.mainHeight - D.m * D.remainder + L) := by
+    grw [← D.abs_mainHeight_add_remainder_le, ← neg_le_abs, ← le_abs_self]
+    linarith only [(HasLogBound.pos D : 0 < L)]
+  have vol := integral_forms_long i big I short
+  field_simp at big
   calc D.m * D.remainder ≤ 4 * L + 4 * D.x ^ 99 + 10 * log (1 + D.b ^ 2) * D.budget := by
-        refine le_of_mul_le_mul_left ?_ d0
-        have vol := integral_forms_long i big I short
-        dsimp only [h, d, L] at loss index vol ⊢
-        linarith only [loss, index, vol]
+        apply le_of_mul_le_mul_left _ d
+        dsimp only [L] at h ⊢
+        linarith only [vol, index, mul_le_mul_of_nonneg_right small h,
+          mul_le_mul_of_nonneg_right big (show 0 ≤ D.x ^ 99 by positivity)]
     _ ≤ _ := D.le_of_hasLogBound
 
 /-- One-sided bound: for parameters N₀, d as in `Parameters` and 0 < ε < 1/100, the remainder

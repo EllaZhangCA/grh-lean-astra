@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import New.Columns.LocalStatement
 import New.Rows.RowVolume
 import New.Seesaw.SeesawTheorem
@@ -46,28 +47,16 @@ h_main = `Data.mainHeight` and rem = `Data.remainder`.
 
 Choice of the level prime. -/
 lemma Data.heightPerRow_le : D.heightPerRow ≤ D.mainHeight - D.m * D.remainder + D.budget := by
-  set w := (∑ τ, (D.nominalWeight τ).log) / D.f
-  set G := (D.gProd * D.rootDisc / (2 * π)).log with hG
-  have stirling : log D.a.factorial ≤ D.a * log D.a - D.a + (1 + log D.a / 2) := by
-    have S := log_stirlingSeq'_antitone D.a.pred.zero_le
-    simp [log_stirlingSeq_formula, log_div, log_mul, log_sqrt, (HasLogBound.pos D).ne',
-      (D.nat_le_of_hasLogBound : 1 ≤ D.a)] at S
-    bound
-  have excess : D.jetSize D.a - D.mainAsk ≤ D.a * (w + G) + (1 + log D.a / 2) := by
-    simp [jetSize, mainAsk, hG, bigOmega, log_div, log_mul, (HasLogBound.pos D).ne']
-    bound
-  -- the left side is `logLevelTarget`
-  have level : D.m * (w + G) - (G + 15 / 2 * D.logB) ≤
-    log D.N := by grind [D.log_N_mem_window.1, logLevelTarget]
-  calc D.heightPerRow = D.mainHeight - D.m * D.remainder + #_ *
-      (D.m * (D.jetSize D.a - D.mainAsk) - D.a * log D.N) := by
-        simp [heightPerRow, mainHeight, remainder]
-        ring
-    _ ≤ D.mainHeight - D.m * D.remainder + #D.tops * (D.m * (_ + (1 + log D.a / 2)) -
-        D.a * (_ - (G + _))) := by bound
-    -- `m a (w + G)` cancels
-    _ = _ + #D.tops * (D.m * (1 + log D.a / 2) + D.a * (G + 15 / 2 * D.logB)) := by ring
-    _ ≤ _ := add_le_add_right D.le_of_hasLogBound _
+  have stirling := log_stirlingSeq'_antitone D.a.pred.zero_le
+  simp [log_stirlingSeq_formula, log_div, log_mul, log_sqrt, (HasLogBound.pos D).ne',
+    (D.nat_le_of_hasLogBound : 1 ≤ D.a)] at stirling
+  -- Bound the two terms left after subtracting the level contribution.
+  have err : (#D.tops : ℝ) * (D.m * (1 + log D.a / 2) + D.a *
+      (log (D.gProd * D.rootDisc / (2 * π)) + 15 / 2 * D.logB)) ≤ D.budget := D.le_of_hasLogBound
+  grw [heightPerRow, ← D.log_N_mem_window.1]
+  simp [mainHeight, remainder, mainAsk, jetSize, logLevelTarget,
+    bigOmega, log_div, log_mul, (HasLogBound.pos D).ne'] at err ⊢
+  linear_combination (#D.tops * (D.m : ℝ)) * stirling + err
 
 /-- Crude bound: |h_main| + m·|rem| ≤ b² x⁹⁹, with h_main = `Data.mainHeight` and rem =
 `Data.remainder`. -/
@@ -91,25 +80,14 @@ lemma Data.remainder_eq : D.remainder = D.a * (#D.thick *
     rw [card_filter, tops, sum_filter, ← (Equiv.divRight (D.placeOfInt (-ν))).sum_comp]
     simp +contextual [← sum_filter, lambdaClass, filter_inter, Unique.eq_default,
       placeClass_of_thick, @eq_comm _ˣ (-1), apply_ite card, div_eq_one, Set.indicator]
-  -- the prime sums are remainders plus main terms (`primeError_eq_sum`; the constant for modulus
-  -- `1` is `-1 - chowlaSelbergConst` by `re_logDerivMean_one`, the one for `N₀` drops out of the
-  -- difference)
-  have asks : ∑ τ ∈ D.tops, D.primeSum D.a τ = D.a * (#D.thick * (primeError P.d P.N₀ D.x -
-    primeError P.d P.N₀ D.x₁) + #D.tops * primeError P.d 1 D.x₁ + (#D.thick *
-    ((D.logX - D.logX₁) / P.N₀.totient) + #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d))) := by
-    simp [A, @sum_ite D.Φ, filter_not, cast_card_sdiff, sub_mul, re_logDerivMean_one, ← mul_sum,
-      primeSum, nominalWeight, D.tops.sum_comm, primeError_eq_sum D.a D.logX₁.exp_pos
-      D.le_of_hasLogBound, primeError_eq_sum D.a D.logX.exp_pos D.le_of_hasLogBound, div_ite,
-      sub_ite, apply_ite posPart, ← sum_div]
-    field [(HasLogBound.pos D).ne']
-  -- `mainAsk` is the mean of the same main terms, as `f = #tops φ(N₀)`
-  have main : #D.tops * D.mainAsk = D.a * (#D.thick * ((D.logX - D.logX₁) / P.N₀.totient) +
-      #D.tops * (D.logX₁ - 1 - chowlaSelbergConst P.d)) := by
-    simp [mainAsk, nominalWeight, apply_ite, log_div, (HasLogBound.pos D).ne', sum_ite, filter_not,
-      cast_card_sdiff, card_infinitePlace_E, show #D.tops = _ by apply card_placeClass_eq]
-    field [(HasLogBound.pos D).ne']
-  simp [*, remainder]
-  ring
+  -- Expand both prime errors and the mean at once, then cancel the common main terms.
+  simp [remainder, mainAsk, A, @sum_ite D.Φ, filter_not, cast_card_sdiff, sub_mul,
+    re_logDerivMean_one, ← mul_sum, primeSum, nominalWeight, D.tops.sum_comm,
+    primeError_eq_sum D.a D.logX₁.exp_pos D.le_of_hasLogBound,
+    primeError_eq_sum D.a D.logX.exp_pos D.le_of_hasLogBound, div_ite, sub_ite, apply_ite posPart,
+    apply_ite log, log_div, (HasLogBound.pos D).ne', ← sum_div]
+  simp [card_infinitePlace_E, show #D.tops = _ by apply card_placeClass_eq]
+  field [(HasLogBound.pos D).ne']
 
 /-- The map i_N from the ramified columns to the columns: the inclusion times the non-zero
 constant chosen from the seesaw identity `Data.seesaw`. -/

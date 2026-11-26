@@ -1,3 +1,4 @@
+-- Modified from lsernau/grh-lean with GPT-6.2 Astra.
 import Lib.General.Combinatorics.Average
 
 /-! General lemmas of group theory (textbook or folklore).
@@ -53,8 +54,7 @@ lemma IsChar.apply_inv g : χ g⁻¹ = conj (χ g) := by
   simp [← (h.exists_sum_addChar_zpowers g).choose_spec, ← map_neg_eq_conj]; rfl
 
 lemma IsChar.isIntegral g : IsIntegral ℤ (χ g) :=
-  (h.exists_sum_addChar_zpowers g).choose_spec g (by simp) ▸ .sum _
-  fun l _ ↦ .nsmul (.of_pow (orderOf_pos l) (by simp [← pow_apply, isIntegral_one])) _
+  h.rec fun ρ e ↦ e ▸ ρ.isIntegral_character g
 
 lemma IsChar.star : IsChar (conj <| χ ·) :=
   h.imp' (.of <| .dual ·.ρ) (by aesop (add simp apply_inv))
